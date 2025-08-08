@@ -1,31 +1,44 @@
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const { Pool } = require('pg');
-require('dotenv').config();
 
+// Importing tools
+const express = require('express');   //webserver framework
+const cors = require('cors');         // send/receive messages from a server on the same domain that the JS was served from
+const jwt = require('jsonwebtoken');  // JSON Web Token for authentication
+const bcrypt = require('bcryptjs');   // Password hashing
+const { Pool } = require('pg');       // PostgreSql database conencter
+require('dotenv').config();           // help read environment variables from .env file
+
+
+// ==================== SERVER SETUP ====================
+// Initialize/Creating webserver app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+
+// ==================== DATABASE SETUP ====================
 // Database connection
-const pool = new Pool({
-  user: process.env.DB_USER,
+const pool = new Pool({               // pool is a connection pool to manage database connections
+  user: process.env.DB_USER,          // uses stuff from .env file
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
 });
 
-// JWT Middleware for protected routes
+
+// Middleware to authenticate JWT token
+// This function checks if the request has a valid JWT token in the Authorization header
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer token format
 
+  // If no token is provided, return 401 Unauthorized
   if (!token) {
     return res.status(401).json({ message: 'Access token required' });
   }
 
+  // Verify the token using the secret key
+  // If the token is valid, the user information is added to the request object
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
@@ -33,7 +46,9 @@ const authenticateToken = (req, res, next) => {
     req.user = user;
     next();
   });
+
 };
+
 
 // Test database connection
 const testDatabaseConnection = async () => {
@@ -46,7 +61,10 @@ const testDatabaseConnection = async () => {
   }
 };
 
-// Initialize database tables
+
+
+// ==================== DATABASE INITIALIZATION ====================
+// Initialize database tables when the server starts
 const initDatabase = async () => {
   try {
     // Users table
@@ -129,11 +147,16 @@ const initDatabase = async () => {
   }
 };
 
+
+
+// ==================== MIDDLEWARE SETUP ====================
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors()); 
+app.use(express.json()); 
+
 
 // Test routes
+// The URLs below can be used to test the backend server and database connection
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is working!' });
 });
@@ -153,35 +176,36 @@ app.get('/api/db-test', async (req, res) => {
   }
 });
 
+
+
 // ==================== AUTH ROUTES ====================
 
 // Register new user
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, userType, fullName } = req.body;
+    const { email, password, userType, fullName } = req.body;               // Extracting user details from request body  
     
     // Validate input
     if (!email || !password || !userType || !fullName) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({ message: 'All fields are required' });  // Check if all fields are provided
     }
 
     if (!['buyer', 'seller'].includes(userType)) {
-      return res.status(400).json({ message: 'User type must be buyer or seller' });
+      return res.status(400).json({ message: 'User type must be buyer or seller' }); // Check if userType is valid
     }
 
     // Check if user already exists
     const existingUser = await pool.query(
-      'SELECT * FROM users WHERE email = $1', 
+      'SELECT * FROM users WHERE email = $1',
       [email]
     );
-    
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
     // Hash password
     const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, saltRounds); 
 
     // Create new user
     const newUser = await pool.query(
@@ -189,8 +213,8 @@ app.post('/api/auth/register', async (req, res) => {
       [email, hashedPassword, userType, fullName]
     );
 
-    // Generate JWT token
-    const token = jwt.sign(
+    // Generate JWT token with user information
+    const token = jwt.sign( 
       { 
         userId: newUser.rows[0].id, 
         userType: newUser.rows[0].user_type,
@@ -200,13 +224,13 @@ app.post('/api/auth/register', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    res.status(201).json({
-      message: 'User registered successfully',
+    res.status(201).json({                      // Respond with success message, token, and user info
+      message: 'User registered successfully', 
       token,
       user: newUser.rows[0]
     });
 
-  } catch (error) {
+  } catch (error) {                             // Handle errors during registration
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
@@ -227,18 +251,19 @@ app.post('/api/auth/login', async (req, res) => {
       'SELECT * FROM users WHERE email = $1', 
       [email]
     );
-
+    // If user not found, return error
     if (user.rows.length === 0) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     // Check password
     const validPassword = await bcrypt.compare(password, user.rows[0].password);
-    if (!validPassword) {
+    // If password is invalid, return error
+    if (!validPassword) { 
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    // Generate JWT token
+    // Generate JWT token with user information
     const token = jwt.sign(
       { 
         userId: user.rows[0].id, 
@@ -249,7 +274,7 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    res.json({
+    res.json({ 
       message: 'Login successful',
       token,
       user: {
@@ -260,8 +285,8 @@ app.post('/api/auth/login', async (req, res) => {
         created_at: user.rows[0].created_at
       }
     });
-
-  } catch (error) {
+    
+  } catch (error) {                                 // Handle errors during login
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
   }
