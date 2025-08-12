@@ -85,3 +85,8 @@ dist/
 *.swp
 *.swo
 *~
+
+# This file contains API test cases for the e-commerce application.
+paste.txt
+api-tests.http
+*.http
