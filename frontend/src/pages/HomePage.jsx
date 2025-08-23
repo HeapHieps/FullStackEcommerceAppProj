@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
+
 
 const HomePage = () => {
   // State to store products from backend
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { addToCart, isInCart } = useCart();
   
   // Get user info to show personalized welcome
-  const { user } = useAuth();
+  const { user, isBuyer } = useAuth();
 
   // Load products when page loads
   useEffect(() => {
@@ -154,9 +158,23 @@ const HomePage = () => {
                   </p>
                   
                   {/* Action Button */}
-                  <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors">
-                    View Details
-                  </button>
+                  {isBuyer ? (
+                    <button 
+                      onClick={() => addToCart(product.id, 1)}
+                      disabled={isInCart(product.id)}
+                      className={`w-full py-2 rounded transition-colors ${
+                        isInCart(product.id)
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {isInCart(product.id) ? 'In Cart' : 'Add to Cart'}
+                    </button>
+                  ) : (
+                    <button className="w-full bg-gray-600 text-white py-2 rounded">
+                      View Details
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
