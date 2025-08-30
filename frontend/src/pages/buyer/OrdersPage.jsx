@@ -100,10 +100,14 @@ const OrdersPage = () => {
       {orders.length === 0 ? (
         // Empty state
         <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-          <svg className="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
+          <img 
+          src="https://www.bing.com/th/id/OIP.EWygUJJjiWPGfqdSes4_UAHaH_?w=183&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" 
+          alt="Empty cart"
+          style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+          className="mx-auto mb-4"
+          />
+
+          
           <p className="text-xl text-gray-600 mb-4">No orders yet</p>
           <p className="text-gray-500 mb-6">When you make your first purchase, it will appear here</p>
           <Link 

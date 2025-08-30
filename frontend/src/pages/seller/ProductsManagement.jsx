@@ -16,10 +16,50 @@ const ProductsManagement = () => {
     imageUrl: ''
   });
   const [formError, setFormError] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Handle image file selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload image to server
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+    
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    try {
+      const response = await api.post('/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.imageUrl;
+    } catch (error) {
+      setFormError('Error uploading image');
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   // Fetch seller's products
   const fetchProducts = async () => {

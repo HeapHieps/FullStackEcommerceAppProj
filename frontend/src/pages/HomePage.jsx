@@ -4,23 +4,34 @@ import api from '../api/axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
-
 const HomePage = () => {
-  // State to store products from backend
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const { addToCart, isInCart } = useCart();
-  
-  // Get user info to show personalized welcome
   const { user, isBuyer } = useAuth();
 
-  // Load products when page loads
+  // Product Categories
+  const categories = [
+    { id: 'all', name: 'All Products', icon: '🛍️' },
+    { id: 'electronics', name: 'Electronics', icon: '💻' },
+    { id: 'clothing', name: 'Clothing', icon: '👕' },
+    { id: 'books', name: 'Books', icon: '📚' },
+    { id: 'home', name: 'Home & Garden', icon: '🏠' },
+    { id: 'toys', name: 'Toys & Games', icon: '🎮' },
+    { id: 'sports', name: 'Sports & Outdoors', icon: '⚽' },
+    { id: 'food', name: 'Food & Grocery', icon: '🍎' },
+    { id: 'beauty', name: 'Beauty & Health', icon: '💄' },
+    { id: 'automotive', name: 'Automotive', icon: '🚗' },
+    { id: 'other', name: 'Other', icon: '📦' },
+  ];
+
+  const DEFAULT_PRODUCT_IMAGE = 'https://via.placeholder.com/300x300/f3f4f6/6b7280?text=No+Image';
+
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Function to get all products from backend
   const fetchProducts = async () => {
     try {
       const response = await api.get('/products');
@@ -32,154 +43,209 @@ const HomePage = () => {
     }
   };
 
-  // Show loading spinner while fetching
+  const filteredProducts = selectedCategory === 'all' 
+    ? products 
+    : products.filter(product => product.category === selectedCategory);
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">Loading products...</div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div style={{ fontSize: '20px' }}>Loading products...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
       {/* Header Section */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">E-Shop Marketplace</h1>
-              {user && (
-                <p className="text-gray-600 mt-1">
-                  Welcome back, {user.full_name}! 
-                  {user.user_type === 'seller' && ' (Seller Account)'}
-                </p>
-              )}
-            </div>
-            
-            {/* Navigation Links */}
-            <div className="flex gap-4">
-              {!user ? (
-                // Show login/register if not logged in
-                <>
-                  <Link to="/login" className="text-blue-600 hover:text-blue-800">
-                    Login
-                  </Link>
-                  <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                    Sign Up
-                  </Link>
-                </>
-              ) : (
-                // Show logout button if logged in
-                <button 
-                  onClick={() => {
-                    localStorage.clear();
-                    window.location.reload();
-                  }}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Logout
-                </button>
-              )}
-            </div>
-          </div>
+      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 0' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Shop All Products</h1>
+          {user && (
+            <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>
+              Welcome back, {user.full_name}!
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Products Section */}
-      <div className="container mx-auto px-4 py-8">
-        <h2 className="text-2xl font-semibold mb-6">Available Products</h2>
-        
-        {products.length === 0 ? (
-          // Message when no products exist
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500 text-xl">No products available yet.</p>
-            <p className="text-gray-400 mt-2">
-              {user?.user_type === 'seller' 
-                ? 'Be the first to add products!' 
-                : 'Check back later or become a seller to add products!'}
-            </p>
-            {user?.user_type === 'seller' && (
-              <Link 
-                to="/seller/products" 
-                className="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-              >
-                Add Your First Product
-              </Link>
-            )}
-          </div>
-        ) : (
-          // Grid of product cards
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div 
-                key={product.id} 
-                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
-              >
-                {/* Product Image */}
-                <div className="h-48 bg-gray-200 rounded-t-lg overflow-hidden">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Product Details */}
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
-                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                    {product.description || 'No description available'}
-                  </p>
-                  
-                  {/* Price and Stock */}
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-2xl font-bold text-blue-600">
-                      ${product.price}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      Stock: {product.stock_quantity}
-                    </span>
-                  </div>
-                  
-                  {/* Store Info */}
-                  <p className="text-xs text-gray-500 mb-3">
-                    by {product.store_name}
-                  </p>
-                  
-                  {/* Action Button */}
-                  {isBuyer ? (
-                    <button 
-                      onClick={() => addToCart(product.id, 1)}
-                      disabled={isInCart(product.id)}
-                      className={`w-full py-2 rounded transition-colors ${
-                        isInCart(product.id)
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
+      {/* Main Content */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px' }}>
+        <div style={{ display: 'flex', gap: '24px' }}>
+          
+          {/* Left Sidebar */}
+          <div style={{ width: '256px', flexShrink: 0 }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <h2 style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '16px' }}>Categories</h2>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {categories.map((category) => (
+                  <li key={category.id} style={{ marginBottom: '4px' }}>
+                    <button
+                      onClick={() => setSelectedCategory(category.id)}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: selectedCategory === category.id ? '#dbeafe' : 'transparent',
+                        color: selectedCategory === category.id ? '#1d4ed8' : '#374151',
+                        fontWeight: selectedCategory === category.id ? '500' : 'normal',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                      onMouseOver={(e) => {
+                        if (selectedCategory !== category.id) {
+                          e.currentTarget.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (selectedCategory !== category.id) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
+                      }}
                     >
-                      {isInCart(product.id) ? 'In Cart' : 'Add to Cart'}
+                      <span>{category.icon}</span>
+                      <span>{category.name}</span>
                     </button>
-                  ) : (
-                    <button className="w-full bg-gray-600 text-white py-2 rounded">
-                      View Details
-                    </button>
-                  )}
+                  </li>
+                ))}
+              </ul>
+
+              {/* Price Filters */}
+              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
+                <h3 style={{ fontWeight: '600', fontSize: '14px', marginBottom: '12px' }}>Price Range</h3>
+                <div style={{ fontSize: '14px' }}>
+                  {['Under $25', '$25 to $50', '$50 to $100', 'Over $100'].map((range) => (
+                    <label key={range} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" />
+                      <span>{range}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        )}
+
+          {/* Right Side - Products */}
+          <div style={{ flex: 1 }}>
+            {/* Results Header */}
+            <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ color: '#6b7280' }}>
+                  Showing <span style={{ fontWeight: '600' }}>{filteredProducts.length}</span> products
+                </p>
+                <select style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 8px', fontSize: '14px' }}>
+                  <option>Sort by: Featured</option>
+                  <option>Price: Low to High</option>
+                  <option>Price: High to Low</option>
+                  <option>Newest First</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            {filteredProducts.length === 0 ? (
+              <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '48px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                <p style={{ color: '#6b7280', fontSize: '20px' }}>No products found in this category.</p>
+              </div>
+            ) : (
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: '16px'
+              }}>
+                {filteredProducts.map((product) => (
+                  <div key={product.id} style={{
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}>
+                    {/* Product Image */}
+                    <div style={{ width: '100%', paddingBottom: '100%', position: 'relative', backgroundColor: '#f3f4f6' }}>
+                      <img 
+                        src={product.image_url || DEFAULT_PRODUCT_IMAGE}
+                        alt={product.name}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                          e.target.src = DEFAULT_PRODUCT_IMAGE;
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Product Details */}
+                    <div style={{ padding: '16px' }}>
+                      <h3 style={{ fontWeight: '500', marginBottom: '8px', minHeight: '48px' }}>
+                        {product.name}
+                      </h3>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                        <span style={{ color: '#facc15' }}>★★★★☆</span>
+                        <span style={{ fontSize: '12px', color: '#6b7280' }}>(128)</span>
+                      </div>
+                      
+                      <div style={{ marginBottom: '8px' }}>
+                        <span style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                          ${product.price}
+                        </span>
+                      </div>
+                      
+                      <p style={{ fontSize: '14px', color: product.stock_quantity > 0 ? '#16a34a' : '#dc2626', marginBottom: '12px' }}>
+                        {product.stock_quantity > 0 ? `In Stock (${product.stock_quantity})` : 'Out of Stock'}
+                      </p>
+                      
+                      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+                        Sold by: {product.store_name}
+                      </p>
+                      
+                      {isBuyer ? (
+                        <button 
+                          onClick={() => addToCart(product.id, 1)}
+                          disabled={isInCart(product.id) || product.stock_quantity === 0}
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: isInCart(product.id) ? '#d1d5db' : product.stock_quantity === 0 ? '#e5e7eb' : '#fbbf24',
+                            color: isInCart(product.id) || product.stock_quantity === 0 ? '#6b7280' : '#111827',
+                            fontWeight: '500',
+                            cursor: isInCart(product.id) || product.stock_quantity === 0 ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {isInCart(product.id) ? 'In Cart' : product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
+                      ) : (
+                        <button style={{
+                          width: '100%',
+                          padding: '8px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          backgroundColor: '#2563eb',
+                          color: 'white',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}>
+                          View Details
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

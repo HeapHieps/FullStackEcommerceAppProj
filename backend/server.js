@@ -5,6 +5,9 @@ const cors = require('cors');         // send/receive messages from a server on 
 const jwt = require('jsonwebtoken');  // JSON Web Token for authentication
 const bcrypt = require('bcryptjs');   // Password hashing
 const { Pool } = require('pg');       // PostgreSql database conencter
+const multer = require('multer');     // File upload handling
+const path = require('path');         // Path utilities
+const fs = require('fs');             // File system operations
 require('dotenv').config();           // help read environment variables from .env file
 
 
@@ -12,6 +15,41 @@ require('dotenv').config();           // help read environment variables from .e
 // Initialize/Creating webserver app
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    // Generate unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  }
+});
 
 
 
@@ -100,6 +138,7 @@ const initDatabase = async () => {
         description TEXT,
         price DECIMAL(10,2) NOT NULL,
         stock_quantity INTEGER NOT NULL DEFAULT 0,
+        category VARCHAR(50) DEFAULT 'other',
         image_url VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -141,6 +180,15 @@ const initDatabase = async () => {
       )
     `);
 
+    // Add category column to existing products table if it doesn't exist
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE products ADD COLUMN category VARCHAR(50) DEFAULT 'other';
+      EXCEPTION
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
+
     console.log('✅ Database tables created successfully');
   } catch (error) {
     console.error('❌ Database initialization error:', error.message);
@@ -152,7 +200,9 @@ const initDatabase = async () => {
 // ==================== MIDDLEWARE SETUP ====================
 // Middleware
 app.use(cors()); 
-app.use(express.json()); 
+app.use(express.json());
+// Serve uploaded images statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
 
 
 // Test routes
@@ -388,6 +438,26 @@ app.get('/api/seller/store', authenticateToken, async (req, res) => {
   }
 });
 
+// Upload product image
+app.post('/api/upload-image', authenticateToken, upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded' });
+    }
+
+    // Return the file URL
+    const imageUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
+    res.json({
+      message: 'Image uploaded successfully',
+      imageUrl: imageUrl
+    });
+
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({ message: 'Server error during image upload' });
+  }
+});
+
 // Add new product
 app.post('/api/seller/products', authenticateToken, async (req, res) => {
   try {
@@ -397,7 +467,7 @@ app.post('/api/seller/products', authenticateToken, async (req, res) => {
     }
 
     // Extract product details from request body
-    const { name, description, price, stockQuantity, imageUrl } = req.body;
+    const { name, description, price, stockQuantity, imageUrl, category } = req.body;
 
     
     // check if all required fields are provided
@@ -423,8 +493,8 @@ app.post('/api/seller/products', authenticateToken, async (req, res) => {
 
     // Add product to database
     const newProduct = await pool.query(
-      'INSERT INTO products (seller_id, store_id, name, description, price, stock_quantity, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [req.user.userId, store.rows[0].id, name, description, price, stockQuantity, imageUrl]
+      'INSERT INTO products (seller_id, store_id, name, description, price, stock_quantity, category, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [req.user.userId, store.rows[0].id, name, description, price, stockQuantity, category || 'other', imageUrl]
     );
 
     res.status(201).json({
@@ -468,7 +538,7 @@ app.put('/api/seller/products/:id', authenticateToken, async (req, res) => {
     }
 
     const { id } = req.params; // Get product ID from URL
-    const { name, description, price, stockQuantity, imageUrl } = req.body;
+    const { name, description, price, stockQuantity, imageUrl, category } = req.body;
 
     // Validate input
     if (!name || !price || stockQuantity === undefined) {
@@ -481,8 +551,8 @@ app.put('/api/seller/products/:id', authenticateToken, async (req, res) => {
 
     // Update product (only if it belongs to this seller)
     const updatedProduct = await pool.query(
-      'UPDATE products SET name = $1, description = $2, price = $3, stock_quantity = $4, image_url = $5 WHERE id = $6 AND seller_id = $7 RETURNING *',
-      [name, description, price, stockQuantity, imageUrl, id, req.user.userId]
+      'UPDATE products SET name = $1, description = $2, price = $3, stock_quantity = $4, category = $5, image_url = $6 WHERE id = $7 AND seller_id = $8 RETURNING *',
+      [name, description, price, stockQuantity, category || 'other', imageUrl, id, req.user.userId]
     );
 
     if (updatedProduct.rows.length === 0) {
@@ -625,7 +695,26 @@ app.get('/api/products', async (req, res) => {
       ORDER BY p.created_at DESC
     `);
 
-    res.json(products.rows);
+    // Process image URLs to handle placeholders and relative paths
+    const processedProducts = products.rows.map(product => {
+      let imageUrl = product.image_url;
+      
+      // If image_url is a placeholder or doesn't exist, set to null
+      if (!imageUrl || imageUrl.includes('example.com') || imageUrl.includes('placeholder')) {
+        imageUrl = null;
+      }
+      // If image_url is a relative path (uploaded file), make it absolute
+      else if (imageUrl && !imageUrl.startsWith('http')) {
+        imageUrl = `http://localhost:${PORT}/uploads/${imageUrl}`;
+      }
+      
+      return {
+        ...product,
+        image_url: imageUrl
+      };
+    });
+
+    res.json(processedProducts);
 
   } catch (error) {
     console.error('Get products error:', error);

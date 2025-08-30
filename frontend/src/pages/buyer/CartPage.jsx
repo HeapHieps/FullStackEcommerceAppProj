@@ -40,11 +40,13 @@ const CartPage = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
         <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-          <svg className="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" 
-            />
-          </svg>
+          <img
+            src="https://static.thenounproject.com/png/1700378-200.png"
+            alt="Empty cart"
+            className="mx-auto mb-4"
+            style={{ width: '400px', height: '400px', objectFit: 'cover' }}
+          />
+
           <p className="text-xl text-gray-600 mb-4">Your cart is empty</p>
           <Link 
             to="/" 
