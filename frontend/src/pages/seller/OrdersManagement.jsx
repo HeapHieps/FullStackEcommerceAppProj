@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 
 const OrdersManagement = () => {
+  // ==================== STATE MANAGEMENT ====================
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, pending, shipped, delivered
@@ -11,6 +12,7 @@ const OrdersManagement = () => {
     fetchOrders();
   }, []);
 
+  // ==================== DATA FETCHING FUNCTIONS ====================
   // Fetch seller's orders
   const fetchOrders = async () => {
     try {
@@ -23,6 +25,7 @@ const OrdersManagement = () => {
     }
   };
 
+  // ==================== EVENT HANDLERS ====================
   // Update order status
   const updateOrderStatus = async (orderId, newStatus) => {
     setUpdating(orderId);
@@ -42,6 +45,7 @@ const OrdersManagement = () => {
     }
   };
 
+  // ==================== UTILITY FUNCTIONS ====================
   // Filter orders based on status
   const filteredOrders = filter === 'all' 
     ? orders 
@@ -50,11 +54,11 @@ const OrdersManagement = () => {
   // Get status badge color
   const getStatusColor = (status) => {
     switch(status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return { backgroundColor: '#fef3c7', color: '#92400e' };
+      case 'shipped': return { backgroundColor: '#dbeafe', color: '#1e40af' };
+      case 'delivered': return { backgroundColor: '#d1fae5', color: '#065f46' };
+      case 'cancelled': return { backgroundColor: '#fee2e2', color: '#991b1b' };
+      default: return { backgroundColor: '#f3f4f6', color: '#374151' };
     }
   };
 
@@ -63,181 +67,295 @@ const OrdersManagement = () => {
     return items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0).toFixed(2);
   };
 
+  // ==================== LOADING STATE ====================
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">Loading orders...</div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div style={{ fontSize: '20px' }}>Loading orders...</div>
       </div>
     );
   }
 
+  // ==================== MAIN ORDERS MANAGEMENT RENDER ====================
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
-        <p className="text-gray-600 mt-2">View and manage customer orders</p>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="flex flex-wrap border-b">
-          {['all', 'pending', 'shipped', 'delivered', 'cancelled'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-6 py-3 font-medium capitalize transition-colors ${
-                filter === status
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {status}
-              <span className="ml-2 text-sm">
-                ({orders.filter(o => status === 'all' || o.status === status).length})
-              </span>
-            </button>
-          ))}
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 16px' }}>
+        
+        {/* ==================== HEADER SECTION ==================== */}
+        {/* Header */}
+        <div style={{ marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827' }}>Order Management</h1>
+          <p style={{ color: '#6b7280', marginTop: '8px' }}>View and manage customer orders</p>
         </div>
-      </div>
 
-      {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <svg className="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <p className="text-xl text-gray-600 mb-2">No orders found</p>
-          <p className="text-gray-500">
-            {filter !== 'all' ? `No ${filter} orders` : 'You haven\'t received any orders yet'}
-          </p>
+        {/* ==================== FILTER TABS ==================== */}
+        {/* Filter Tabs */}
+        <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb' }}>
+            {['all', 'pending', 'shipped', 'delivered', 'cancelled'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                style={{
+                  padding: '12px 24px',
+                  fontWeight: '500',
+                  textTransform: 'capitalize',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: filter === status ? '#2563eb' : '#6b7280',
+                  borderBottom: filter === status ? '2px solid #2563eb' : 'none',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  if (filter !== status) e.target.style.color = '#111827';
+                }}
+                onMouseOut={(e) => {
+                  if (filter !== status) e.target.style.color = '#6b7280';
+                }}
+              >
+                {status}
+                {/* Show count for each status filter */}
+                <span style={{ marginLeft: '8px', fontSize: '14px' }}>
+                  ({orders.filter(o => status === 'all' || o.status === status).length})
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {filteredOrders.map((order) => (
-            <div key={order.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-              {/* Order Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b">
-                <div className="flex flex-wrap justify-between items-center gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">
-                      Order ID: <span className="font-mono font-semibold">#{order.id}</span>
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Placed on: {new Date(order.created_at).toLocaleString()}
-                    </p>
+
+        {/* ==================== ORDERS LIST OR EMPTY STATE ==================== */}
+        {/* Orders List */}
+        {filteredOrders.length === 0 ? (
+          // Empty state when no orders match current filter
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '48px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            {/* Empty orders icon */}
+            <svg style={{ width: '96px', height: '96px', color: '#9ca3af', margin: '0 auto 16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            {/* Empty state messaging */}
+            <p style={{ fontSize: '20px', color: '#4b5563', marginBottom: '8px' }}>No orders found</p>
+            <p style={{ color: '#6b7280' }}>
+              {filter !== 'all' ? `No ${filter} orders` : 'You haven\'t received any orders yet'}
+            </p>
+          </div>
+        ) : (
+          // Orders list when orders exist
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {filteredOrders.map((order) => (
+              <div key={order.id} style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                
+                {/* ==================== ORDER HEADER ==================== */}
+                {/* Order Header */}
+                <div style={{ backgroundColor: '#f9fafb', padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    {/* Order ID and timestamp */}
+                    <div>
+                      <p style={{ fontSize: '14px', color: '#6b7280' }}>
+                        Order ID: <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>#{order.id}</span>
+                      </p>
+                      <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
+                        {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    {/* Status badge and order total */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      {/* Status badge with dynamic color */}
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        ...getStatusColor(order.status)
+                      }}>
+                        {order.status}
+                      </span>
+                      {/* Order total amount */}
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '14px', color: '#6b7280' }}>Total</p>
+                        <p style={{ fontSize: '20px', fontWeight: 'bold' }}>${calculateOrderTotal(order.items)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Total</p>
-                      <p className="text-xl font-bold">${calculateOrderTotal(order.items)}</p>
+                </div>
+
+                {/* ==================== CUSTOMER INFORMATION ==================== */}
+                {/* Customer Info */}
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+                  <h3 style={{ fontWeight: '600', color: '#111827', marginBottom: '12px', fontSize: '16px' }}>Customer Information</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '14px' }}>
+                    {/* Customer name */}
+                    <div>
+                      <p style={{ color: '#6b7280' }}>Name</p>
+                      <p style={{ fontWeight: '500', color: '#111827' }}>{order.buyer_name}</p>
+                    </div>
+                    {/* Customer email */}
+                    <div>
+                      <p style={{ color: '#6b7280' }}>Email</p>
+                      <p style={{ fontWeight: '500', color: '#111827' }}>{order.buyer_email}</p>
+                    </div>
+                    {/* Shipping address - spans full width */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <p style={{ color: '#6b7280' }}>Shipping Address</p>
+                      <p style={{ fontWeight: '500', color: '#111827' }}>{order.shipping_address}</p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Customer Info */}
-              <div className="px-6 py-4 border-b">
-                <h3 className="font-semibold text-gray-900 mb-2">Customer Information</h3>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Name</p>
-                    <p className="font-medium">{order.buyer_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Email</p>
-                    <p className="font-medium">{order.buyer_email}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="text-gray-600">Shipping Address</p>
-                    <p className="font-medium">{order.shipping_address}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div className="px-6 py-4 border-b">
-                <h3 className="font-semibold text-gray-900 mb-3">Order Items</h3>
-                <div className="space-y-3">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* Product Image */}
-                        <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
-                          {item.image_url ? (
-                            <img 
-                              src={item.image_url} 
-                              alt={item.product_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                              No image
-                            </div>
-                          )}
+                {/* ==================== ORDER ITEMS SECTION ==================== */}
+                {/* Order Items */}
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+                  <h3 style={{ fontWeight: '600', color: '#111827', marginBottom: '12px', fontSize: '16px' }}>Order Items</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {order.items.map((item, index) => (
+                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          
+                          {/* ==================== PRODUCT IMAGE ==================== */}
+                          {/* Small Product Image */}
+                          <div style={{ 
+                            width: '48px', 
+                            height: '48px', 
+                            backgroundColor: '#f3f4f6', 
+                            borderRadius: '6px', 
+                            overflow: 'hidden',
+                            flexShrink: 0
+                          }}>
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.product_name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.parentElement.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:10px">No image</div>';
+                                }}
+                              />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '10px' }}>
+                                No image
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* ==================== PRODUCT DETAILS ==================== */}
+                          {/* Product Details */}
+                          <div>
+                            <p style={{ fontWeight: '500', color: '#111827' }}>{item.product_name}</p>
+                            <p style={{ fontSize: '14px', color: '#6b7280' }}>
+                              Qty: {item.quantity} × ${item.price}
+                            </p>
+                          </div>
                         </div>
-                        {/* Product Details */}
-                        <div>
-                          <p className="font-medium text-gray-900">{item.product_name}</p>
-                          <p className="text-sm text-gray-600">
-                            Quantity: {item.quantity} × ${item.price}
-                          </p>
+                        
+                        {/* ==================== ITEM TOTAL ==================== */}
+                        {/* Item Total */}
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontWeight: '600', fontSize: '16px' }}>${(item.quantity * item.price).toFixed(2)}</p>
                         </div>
                       </div>
-                      {/* Item Total */}
-                      <div className="text-right">
-                        <p className="font-semibold">${(item.quantity * item.price).toFixed(2)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Order Actions */}
-              <div className="px-6 py-4 bg-gray-50">
-                <div className="flex flex-wrap gap-3">
-                  {order.status === 'pending' && (
-                    <>
+                {/* ==================== ORDER ACTIONS ==================== */}
+                {/* Order Actions */}
+                <div style={{ padding: '16px 24px', backgroundColor: '#f9fafb' }}>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    
+                    {/* Actions for pending orders */}
+                    {order.status === 'pending' && (
+                      <>
+                        {/* Mark as shipped button */}
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'shipped')}
+                          disabled={updating === order.id}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#2563eb',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontWeight: '500',
+                            cursor: updating === order.id ? 'not-allowed' : 'pointer',
+                            opacity: updating === order.id ? 0.5 : 1
+                          }}
+                          onMouseOver={(e) => {
+                            if (updating !== order.id) e.target.style.backgroundColor = '#1d4ed8';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.backgroundColor = '#2563eb';
+                          }}
+                        >
+                          {updating === order.id ? 'Updating...' : 'Mark as Shipped'}
+                        </button>
+                        
+                        {/* Cancel order button */}
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                          disabled={updating === order.id}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#dc2626',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontWeight: '500',
+                            cursor: updating === order.id ? 'not-allowed' : 'pointer',
+                            opacity: updating === order.id ? 0.5 : 1
+                          }}
+                          onMouseOver={(e) => {
+                            if (updating !== order.id) e.target.style.backgroundColor = '#b91c1c';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.backgroundColor = '#dc2626';
+                          }}
+                        >
+                          Cancel Order
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Actions for shipped orders */}
+                    {order.status === 'shipped' && (
                       <button
-                        onClick={() => updateOrderStatus(order.id, 'shipped')}
+                        onClick={() => updateOrderStatus(order.id, 'delivered')}
                         disabled={updating === order.id}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontWeight: '500',
+                          cursor: updating === order.id ? 'not-allowed' : 'pointer',
+                          opacity: updating === order.id ? 0.5 : 1
+                        }}
+                        onMouseOver={(e) => {
+                          if (updating !== order.id) e.target.style.backgroundColor = '#059669';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.backgroundColor = '#10b981';
+                        }}
                       >
-                        {updating === order.id ? 'Updating...' : 'Mark as Shipped'}
+                        {updating === order.id ? 'Updating...' : 'Mark as Delivered'}
                       </button>
-                      <button
-                        onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                        disabled={updating === order.id}
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors disabled:opacity-50"
-                      >
-                        Cancel Order
-                      </button>
-                    </>
-                  )}
-                  {order.status === 'shipped' && (
-                    <button
-                      onClick={() => updateOrderStatus(order.id, 'delivered')}
-                      disabled={updating === order.id}
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors disabled:opacity-50"
-                    >
-                      {updating === order.id ? 'Updating...' : 'Mark as Delivered'}
-                    </button>
-                  )}
-                  {(order.status === 'delivered' || order.status === 'cancelled') && (
-                    <p className="text-gray-600 py-2">
-                      Order {order.status === 'delivered' ? 'completed' : 'cancelled'}
-                    </p>
-                  )}
+                    )}
+                    
+                    {/* Status message for completed/cancelled orders */}
+                    {(order.status === 'delivered' || order.status === 'cancelled') && (
+                      <p style={{ color: '#6b7280', padding: '8px 0' }}>
+                        Order {order.status === 'delivered' ? 'completed' : 'cancelled'}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

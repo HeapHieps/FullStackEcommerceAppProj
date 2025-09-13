@@ -5,92 +5,312 @@ import { useCart } from '../../contexts/CartContext';
 import { useLocation } from 'react-router-dom';
 
 const Navbar = () => {
+  // ==================== STATE MANAGEMENT ====================
   const navigate = useNavigate();
   const { user, logout, isSeller, isBuyer } = useAuth();
   const { cartItemCount } = useCart();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Hide navigation menu on login/register pages
   const hideMenu = location.pathname === '/login' || location.pathname === '/register';
 
+  // ==================== EVENT HANDLERS ====================
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  // ==================== STYLING CONSTANTS ====================
+  const linkStyle = {
+    color: '#374151',
+    textDecoration: 'none',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    transition: 'all 0.2s',
+    fontWeight: '500',
+    fontSize: '15px'
+  };
+
+  const activeLinkStyle = {
+    ...linkStyle,
+    backgroundColor: '#eff6ff',
+    color: '#2563eb'
+  };
+
+  // ==================== MAIN NAVBAR RENDER ====================
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+    <nav style={{
+      backgroundColor: 'white',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 50
+    }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
+          
+          {/* ==================== LOGO SECTION ==================== */}
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#1f1f1f"><path d="M160-733.33V-800h641.33v66.67H160ZM163.33-160v-252h-46v-66.67L160-680h640.67l42.66 201.33V-412h-46v252h-66.66v-252H551.33v252h-388ZM230-226.67h254.67V-412H230v185.33Zm-46-252h592.67H184Zm0 0h592.67L748-613.33H212.67L184-478.67Z"/></svg>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+            {/* Logo icon container */}
+            <div style={{
+              width: '40px',
+              height: '40px',
+              backgroundColor: '#2563eb',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {/* Shopping cart icon SVG */}
+              <svg style={{ width: '24px', height: '24px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M17 13v8m0-8L14.707 15.293c-.63.63-.184 1.707.707 1.707H17" 
+                />
+              </svg>
+            </div>
+            {/* Brand name */}
+            <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827' }}>MarketPlace</span>
           </Link>
 
+          {/* ==================== DESKTOP MENU ==================== */}
           {/* Desktop Menu */}
           {!hideMenu && (
-            <div className="flex ml-auto w-1/2 justify-end">
-              <div className="flex w-full justify-between items-center">
-                <Link to="/" className="inline-block text-gray-700 hover:text-blue-600 transition-colors">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+              
+              {/* ==================== CENTER NAVIGATION ==================== */}
+              {/* Center Navigation */}
+              <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Browse Products - available to everyone */}
+                <Link 
+                  to="/" 
+                  style={location.pathname === '/' ? activeLinkStyle : linkStyle}
+                  onMouseOver={(e) => {
+                    if (location.pathname !== '/') {
+                      e.target.style.backgroundColor = '#f3f4f6';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (location.pathname !== '/') {
+                      e.target.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
                   Browse Products
                 </Link>
 
+                {/* Buyer-specific navigation links */}
                 {isBuyer && (
                   <>
-                    <Link to="/cart" className="relative text-gray-700 hover:text-blue-600 transition-colors">
-                      Cart
-                      {cartItemCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {cartItemCount}
-                        </span>
-                      )}
+                    {/* Cart link with item count */}
+                    <Link 
+                      to="/cart" 
+                      style={location.pathname === '/cart' ? activeLinkStyle : linkStyle}
+                      onMouseOver={(e) => {
+                        if (location.pathname !== '/cart') {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (location.pathname !== '/cart') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      Cart{cartItemCount > 0 && `(${cartItemCount})`}
                     </Link>
-                    <Link to="/orders" className="text-gray-700 hover:text-blue-600 transition-colors">
+                    {/* Orders link */}
+                    <Link 
+                      to="/orders" 
+                      style={location.pathname === '/orders' ? activeLinkStyle : linkStyle}
+                      onMouseOver={(e) => {
+                        if (location.pathname !== '/orders') {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (location.pathname !== '/orders') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
                       My Orders
                     </Link>
                   </>
                 )}
 
+                {/* Seller-specific navigation links */}
                 {isSeller && (
                   <>
-                    <Link to="/seller/products" className="inline-block text-gray-700 hover:text-blue-600 transition-colors">
+                    {/* Dashboard link */}
+                    <Link 
+                      to="/seller/dashboard" 
+                      style={location.pathname === '/seller/dashboard' ? activeLinkStyle : linkStyle}
+                      onMouseOver={(e) => {
+                        if (location.pathname !== '/seller/dashboard') {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (location.pathname !== '/seller/dashboard') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      Dashboard
+                    </Link>
+                    {/* Products management link */}
+                    <Link 
+                      to="/seller/products" 
+                      style={location.pathname === '/seller/products' ? activeLinkStyle : linkStyle}
+                      onMouseOver={(e) => {
+                        if (location.pathname !== '/seller/products') {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (location.pathname !== '/seller/products') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
                       My Products
                     </Link>
-                    <Link to="/seller/orders" className="inline-block text-gray-700 hover:text-blue-600 transition-colors">
+                    {/* Orders management link */}
+                    <Link 
+                      to="/seller/orders" 
+                      style={location.pathname === '/seller/orders' ? activeLinkStyle : linkStyle}
+                      onMouseOver={(e) => {
+                        if (location.pathname !== '/seller/orders') {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (location.pathname !== '/seller/orders') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
                       Orders
                     </Link>
-                    <Link to="/seller/store" className="inline-block text-gray-700 hover:text-blue-600 transition-colors">
+                    {/* Store settings link */}
+                    <Link 
+                      to="/seller/store" 
+                      style={location.pathname === '/seller/store' ? activeLinkStyle : linkStyle}
+                      onMouseOver={(e) => {
+                        if (location.pathname !== '/seller/store') {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (location.pathname !== '/seller/store') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
                       Store Settings
                     </Link>
                   </>
                 )}
+              </nav>
 
-                {user ? (
-                  <div className="flex flex-col items-end space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {user.full_name?.charAt(0).toUpperCase()}
-                      </div>
-                      <p className="font-semibold text-gray-800 text-sm">{user.full_name}</p>
-                      <p className="text-gray-500 text-xs capitalize">({user.user_type})</p>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="bg-gray-200 text-gray-800 px-3 py-1 rounded hover:bg-gray-300 transition-colors text-sm"
-                    >
-                      Logout
-                    </button>
+              {/* ==================== USER SECTION ==================== */}
+              {/* User Section */}
+              {user ? (
+                // Logged in user display
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* User info display */}
+                  <div style={{ 
+                    padding: '8px 12px',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}>
+                    <span style={{ fontWeight: '600', color: '#111827' }}>{user.full_name}</span>
+                    <span style={{ color: '#6b7280', marginLeft: '6px', fontSize: '13px' }}>
+                      ({user.user_type})
+                    </span>
                   </div>
-                ) : (
-                  <div className="flex items-center space-x-3">
-                    <Link to="/login" className="text-gray-700 hover:text-blue-600 transition-colors">
-                      Login
-                    </Link>
-                    <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm">
-                      Sign Up
-                    </Link>
-                  </div>
-                )}
-               </div>
+                  {/* Logout button */}
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontWeight: '500',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#dc2626'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#ef4444'}
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                // Not logged in - show login/register links
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* Login link */}
+                  <Link 
+                    to="/login" 
+                    style={{
+                      color: '#374151',
+                      textDecoration: 'none',
+                      padding: '8px 16px',
+                      fontWeight: '500',
+                      fontSize: '14px'
+                    }}
+                    onMouseOver={(e) => e.target.style.color = '#2563eb'}
+                    onMouseOut={(e) => e.target.style.color = '#374151'}
+                  >
+                    Login
+                  </Link>
+                  {/* Sign up button */}
+                  <Link 
+                    to="/register" 
+                    style={{
+                      backgroundColor: '#2563eb',
+                      color: 'white',
+                      padding: '8px 20px',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      fontWeight: '500',
+                      fontSize: '14px',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#1d4ed8'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#2563eb'}
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
             </div>
+          )}
+
+          {/* ==================== MOBILE MENU BUTTON ==================== */}
+          {/* Mobile Menu Button (hidden for now, can be implemented later) */}
+          {!hideMenu && (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                display: 'none', // Set to 'block' on mobile breakpoint
+                padding: '8px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {/* Hamburger menu icon */}
+              <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           )}
         </div>
       </div>
